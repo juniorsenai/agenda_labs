@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agendamento de Laboratórios</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Agendamento de Laboratórios</h1>
+
+<form id="formAgendamento">
+  <input type="text" id="professor" placeholder="Professor" required>
+  <input type="text" id="turma" placeholder="Turma" required>
+
+  <select id="laboratorio">
+    <option>Automação</option>
+    <option>Informática</option>
+    <option>Elétrica</option>
+    <option>Motores</option>
+    <option>Metalmecânica</option>
+  </select>
+
+  <input type="date" id="data" required>
+  <input type="time" id="inicio" required>
+  <input type="time" id="fim" required>
+
+  <button type="submit">Agendar</button>
+</form>
+
+<h2>Agenda</h2>
+<ul id="agenda"></ul>
+
+<script src="firebase.js"></script>
+<script src="script.js"></script>
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

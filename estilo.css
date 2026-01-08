@@ -1,0 +1,24 @@
+body {
+  font-family: Arial;
+  max-width: 700px;
+  margin: auto;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+button {
+  padding: 10px;
+  background: #0055aa;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+li {
+  background: #eee;
+  margin: 5px 0;
+  padding: 10px;
+}
