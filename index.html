@@ -1,39 +1,58 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <title>Agendamento de Laboratórios</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="estilo.css">
 </head>
+
 <body>
+  <h1>Agendamento de Laboratórios</h1>
 
-<h1>Agendamento de Laboratórios</h1>
+<div id="login">
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="senha" placeholder="Senha">
+  <button id="btnLogin">Entrar</button>
+</div>
 
-<form id="formAgendamento">
-  <input type="text" id="professor" placeholder="Professor" required>
-  <input type="text" id="turma" placeholder="Turma" required>
+<div id="sistema" style="display:none;">
+  
+  <button id="btnLogout">Sair</button>
 
-  <select id="laboratorio">
-    <option>Automação</option>
-    <option>Informática</option>
-    <option>Elétrica</option>
-    <option>Motores</option>
-    <option>Metalmecânica</option>
-  </select>
+  <div class="formulario">
+    <input type="date" id="data">
+    <input type="text" id="turma" placeholder="Turma">
+    <button id="btnAgendar">Agendar</button>
+    
 
-  <input type="date" id="data" required>
-  <input type="time" id="inicio" required>
-  <input type="time" id="fim" required>
+    <select id="laboratorio">
+      <option value="Automação">Automação</option>
+      <option value="Informática">Informática</option>
+      <option value="Elétrica">Elétrica</option>
+      <option value="Motores">Motores</option>
+      <option value="Metalmecânica">Metalmecânica</option>
+    </select>
+  </div>
 
-  <button type="submit">Agendar</button>
-</form>
+  <table id="agenda">
+    <thead>
+      <tr>
+      <th>Horário</th>
+      <th id="th-Seg">Seg</th>
+      <th id="th-Ter">Ter</th>
+      <th id="th-Qua">Qua</th>
+      <th id="th-Qui">Qui</th>
+      <th id="th-Sex">Sex</th>
 
-<h2>Agenda</h2>
-<ul id="agenda"></ul>
+    </tr>
 
-<script src="firebase.js"></script>
-<script src="script.js"></script>
-<script type="module" src="script.js"></script>
+    </thead>
+    <tbody id="corpo-agenda"></tbody>
+  </table>
 
+  <!-- Firebase deve carregar primeiro -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="logica.js"></script>
+</div>
 </body>
 </html>

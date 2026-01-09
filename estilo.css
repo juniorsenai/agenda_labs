@@ -1,24 +1,39 @@
 body {
-  font-family: Arial;
-  max-width: 700px;
-  margin: auto;
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-form {
-  display: grid;
+h1 {
+  text-align: center;
+}
+
+.formulario {
+  margin-bottom: 20px;
+  display: flex;
   gap: 10px;
+  justify-content: center;
 }
 
-button {
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #999;
+  text-align: center;
   padding: 10px;
-  background: #0055aa;
-  color: white;
-  border: none;
+}
+
+td {
   cursor: pointer;
 }
 
-li {
-  background: #eee;
-  margin: 5px 0;
-  padding: 10px;
+.livre {
+  background-color: #d4f7d4;
+}
+
+.ocupado {
+  background-color: #f7c0c0;
+  cursor: not-allowed;
 }
