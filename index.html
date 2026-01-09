@@ -1,58 +1,166 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Agendamento de Laboratórios</title>
-  <link rel="stylesheet" href="estilo.css">
+    <meta charset="UTF-8">
+    <title>Login | Sistema de Agendamento</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body{
+            height:100vh;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        .login-container{
+            background:#fff;
+            width:100%;
+            max-width:380px;
+            padding:40px 30px;
+            border-radius:16px;
+            box-shadow:0 20px 40px rgba(0,0,0,0.3);
+            animation:fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn{
+            from{opacity:0; transform:translateY(20px)}
+            to{opacity:1; transform:translateY(0)}
+        }
+
+        .login-container h1{
+            text-align:center;
+            margin-bottom:8px;
+            font-size:26px;
+            color:#333;
+        }
+
+        .login-container p{
+            text-align:center;
+            color:#777;
+            margin-bottom:30px;
+            font-size:14px;
+        }
+
+        .input-group{
+            margin-bottom:20px;
+        }
+
+        .input-group label{
+            display:block;
+            font-size:13px;
+            margin-bottom:6px;
+            color:#444;
+        }
+
+        .input-group input{
+            width:100%;
+            padding:12px;
+            border-radius:8px;
+            border:1px solid #ccc;
+            font-size:14px;
+            transition:0.3s;
+        }
+
+        .input-group input:focus{
+            outline:none;
+            border-color:#2c5364;
+            box-shadow:0 0 0 2px rgba(44,83,100,0.15);
+        }
+
+        .btn-login{
+            width:100%;
+            padding:12px;
+            background:#2c5364;
+            border:none;
+            color:#fff;
+            border-radius:8px;
+            font-size:15px;
+            cursor:pointer;
+            transition:0.3s;
+        }
+
+        .btn-login:hover{
+            background:#203a43;
+        }
+
+        .footer-login{
+            text-align:center;
+            margin-top:20px;
+            font-size:13px;
+            color:#777;
+        }
+
+        .footer-login span{
+            color:#2c5364;
+            font-weight:600;
+        }
+
+        .error{
+            background:#ffe5e5;
+            color:#c0392b;
+            padding:10px;
+            border-radius:8px;
+            font-size:13px;
+            margin-bottom:15px;
+            display:none;
+        }
+
+    </style>
 </head>
-
 <body>
-  <h1>Agendamento de Laboratórios</h1>
 
-<div id="login">
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="senha" placeholder="Senha">
-  <button id="btnLogin">Entrar</button>
+<div class="login-container">
+
+    <h1>Bem-vindo</h1>
+    <p>Sistema de Agendamento de Laboratórios</p>
+
+    <div class="error" id="msgErro"></div>
+
+    <div class="input-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="Digite seu email">
+    </div>
+
+    <div class="input-group">
+        <label>Senha</label>
+        <input type="password" id="senha" placeholder="Digite sua senha">
+    </div>
+
+    <button class="btn-login" onclick="login()">Entrar</button>
+
+    <div class="footer-login">
+        <p>© 2026 <span>Agenda Labs</span></p>
+    </div>
+
 </div>
 
-<div id="sistema" style="display:none;">
-  
-  <button id="btnLogout">Sair</button>
+<script>
+function login(){
+    const email = document.getElementById('email').value;
+    const senha = document.getElementById('senha').value;
+    const erro = document.getElementById('msgErro');
 
-  <div class="formulario">
-    <input type="date" id="data">
-    <input type="text" id="turma" placeholder="Turma">
-    <button id="btnAgendar">Agendar</button>
-    
+    if(email === '' || senha === ''){
+        erro.style.display = 'block';
+        erro.innerText = 'Preencha todos os campos';
+        return;
+    }
 
-    <select id="laboratorio">
-      <option value="Automação">Automação</option>
-      <option value="Informática">Informática</option>
-      <option value="Elétrica">Elétrica</option>
-      <option value="Motores">Motores</option>
-      <option value="Metalmecânica">Metalmecânica</option>
-    </select>
-  </div>
-
-  <table id="agenda">
-    <thead>
-      <tr>
-      <th>Horário</th>
-      <th id="th-Seg">Seg</th>
-      <th id="th-Ter">Ter</th>
-      <th id="th-Qua">Qua</th>
-      <th id="th-Qui">Qui</th>
-      <th id="th-Sex">Sex</th>
-
-    </tr>
-
-    </thead>
-    <tbody id="corpo-agenda"></tbody>
-  </table>
-
-  <!-- Firebase deve carregar primeiro -->
+    // Aqui você chama o Firebase
+    console.log(email, senha);
+}
+</script>
 <script type="module" src="firebase.js"></script>
-<script type="module" src="logica.js"></script>
-</div>
+<script type="module" src="auth.js"></script>
+
 </body>
 </html>

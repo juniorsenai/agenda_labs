@@ -1,102 +1,65 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
 import {
-  collection,
-  addDoc,
-  query,
-  where,
-  onSnapshot
+  collection, addDoc, query, where,
+  onSnapshot, getDocs, deleteDoc,
+  doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
-  signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import { auth } from "./firebase.js";
-
-import {
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-
 
 let unsubscribe = null;
 let diaSelecionado = null;
 let horarioSelecionado = null;
 let usuarioLogado = null;
 
-
-// CAPTURA DOS ELEMENTOS
-const inputData = document.getElementById("data");
-
-// BLOQUEAR DATAS PASSADAS
-const hoje = new Date().toISOString().split("T")[0];
-inputData.min = hoje;
-
-// ESCUTA MUDANÇA DE DATA  ✅ COLOCA AQUI
-inputData.addEventListener("change", () => {
-
-  const data = inputData.value;
-
-  atualizarCabecalhoSemana(data);
-  carregarAgenda(data);
-});
-
-
-const btnLogin = document.getElementById("btnLogin");
-
-btnLogin.onclick = async () => {
-  const email = document.getElementById("email").value;
-  const senha = document.getElementById("senha").value;
-
-  try {
-    await signInWithEmailAndPassword(auth, email, senha);
-  } catch (e) {
-    alert("Login inválido!");
-  }
-};
-
-const btnLogout = document.getElementById("btnLogout");
-
-btnLogout.onclick = async () => {
-  await signOut(auth);
-
-  usuarioLogado = null;
-
-  document.getElementById("sistema").style.display = "none";
-  document.getElementById("login").style.display = "block";
-};
-
-
+/* 🔐 PROTEÇÃO */
 onAuthStateChanged(auth, user => {
-  if (user) {
-
+  if (!user) {
+    window.location.href = "index.html";
+  } else {
     usuarioLogado = {
       uid: user.uid,
       nome: user.displayName || user.email.split("@")[0],
       email: user.email
     };
 
-    document.getElementById("login").style.display = "none";
     document.getElementById("sistema").style.display = "block";
-
-  } else {
-    document.getElementById("sistema").style.display = "none";
-    document.getElementById("login").style.display = "block";
   }
 });
 
+/* LOGOUT */
+document.getElementById("btnLogout").onclick = async () => {
+  await signOut(auth);
+  window.location.href = "index.html";
+};
 
+/* DATA */
+const inputData = document.getElementById("data");
+const hoje = new Date().toISOString().split("T")[0];
+inputData.min = hoje;
 
+inputData.addEventListener("change", () => {
+  atualizarCabecalhoSemana(inputData.value);
+  carregarAgenda(inputData.value);
+});
 
-const horarios = ["08:00", "10:00", "10:15", "12:00", "13:00", "15:00", "15:15", "17:00", "18:00", "20:15", "20:30", "22:00"];
-const dias = ["Seg", "Ter", "Qua", "Qui", "Sex"];
+/* LABORATÓRIO */
+document.getElementById("laboratorio").onchange = () => {
+  const data = document.getElementById("data").value;
+  if (data) carregarAgenda(data);
+};
 
+/* TABELA */
+const horarios = ["08:00","10:00","10:15","12:00","13:00",
+"15:00","15:15","17:00","18:00","20:15","20:30","22:00"];
+
+const dias = ["Seg","Ter","Qua","Qui","Sex"];
 const agendaRef = collection(db, "agendamentos");
 const corpoAgenda = document.getElementById("corpo-agenda");
 
-// Monta tabela
 horarios.forEach(hora => {
   const tr = document.createElement("tr");
   tr.innerHTML = `<td>${hora}</td>`;
@@ -107,199 +70,138 @@ horarios.forEach(hora => {
     td.id = `${dia}-${hora}`;
 
     td.onclick = () => {
-    if (td.classList.contains("ocupado")) return;
-    selecionarHorario(dia, hora);
-  };
+      if (td.classList.contains("ocupado")) return;
+      selecionarHorario(dia, hora);
+    };
 
-  tr.appendChild(td); // 👈 ESSENCIAL
-
+    tr.appendChild(td);
   });
 
   corpoAgenda.appendChild(tr);
 });
 
+/* FUNÇÕES */
 function limparTabela() {
   dias.forEach(dia => {
     horarios.forEach(hora => {
-      const celula = document.getElementById(`${dia}-${hora}`);
-      if (celula) {
-        celula.className = "livre";
-        celula.innerHTML = "";
-      }
+      const c = document.getElementById(`${dia}-${hora}`);
+      c.className = "livre";
+      c.innerHTML = "";
     });
   });
 }
 
-function carregarAgenda(dataSelecionada) {
+function carregarAgenda(data) {
 
-  if (unsubscribe) unsubscribe(); // cancela listener antigo
+  if (unsubscribe) unsubscribe();
+
+  const laboratorio =
+    document.getElementById("laboratorio").value;
 
   const q = query(
     agendaRef,
-    where("data", "==", dataSelecionada)
+    where("data","==",data),
+    where("laboratorio","==",laboratorio)
   );
 
-  unsubscribe = onSnapshot(q, snapshot => {
+  unsubscribe = onSnapshot(q, snap => {
 
     limparTabela();
 
-    snapshot.forEach(doc => {
+    snap.forEach(docu => {
+      const d = docu.data();
+      const c = document.getElementById(`${d.dia}-${d.horario}`);
 
-      const dados = doc.data();
-      const id = `${dados.dia}-${dados.horario}`;
-      const celula = document.getElementById(id);
+      let botoes = "";
 
-      if (celula) {
-        celula.classList.remove("livre");
-        celula.classList.add("ocupado");
-
-        let botoes = "";
-
-if (dados.uid === usuarioLogado.uid) {
-  botoes = `
-    <br>
-    <button onclick="editarAgendamento('${doc.id}')">✏</button>
-    <button onclick="cancelarAgendamento('${doc.id}')">❌</button>
-  `;
-}
-
-celula.innerHTML = `
-  <strong>${dados.professor}</strong><br>
-  ${dados.turma}<br>
-  ${dados.laboratorio}
-  ${botoes}
-`;
-
+      if (d.uid === usuarioLogado.uid) {
+        botoes = `
+        <br>
+        <button onclick="editarAgendamento('${docu.id}')">✏</button>
+        <button onclick="cancelarAgendamento('${docu.id}')">❌</button>
+        `;
       }
+
+      c.className="ocupado";
+      c.innerHTML = `
+      <strong>${d.professor}</strong><br>
+      ${d.turma}<br>${d.laboratorio}
+      ${botoes}
+      `;
     });
   });
 }
 
-
-function selecionarHorario(dia, hora) {
-
-  document.querySelectorAll("td").forEach(td => {
-    td.style.outline = "none";
-  });
-
-  const celula = document.getElementById(`${dia}-${hora}`);
-  celula.style.outline = "3px solid blue";
-
+function selecionarHorario(dia,hora){
   diaSelecionado = dia;
   horarioSelecionado = hora;
 }
 
-function atualizarCabecalhoSemana(dataSelecionada) {
+/* AGENDAR */
+async function tentarAgendar(){
 
-  const data = new Date(dataSelecionada + "T00:00");
-
-  // Descobre o dia da semana (0=domingo, 1=segunda...)
-  const diaSemana = data.getDay();
-
-  // Ajusta para segunda-feira
-  const diff = diaSemana === 0 ? -6 : 1 - diaSemana;
-
-  const segunda = new Date(data);
-  segunda.setDate(data.getDate() + diff);
-
-  const dias = ["Seg", "Ter", "Qua", "Qui", "Sex"];
-
-  dias.forEach((dia, index) => {
-
-    const d = new Date(segunda);
-    d.setDate(segunda.getDate() + index);
-
-    const formatada = d.toLocaleDateString("pt-BR");
-
-    document.getElementById(`th-${dia}`)
-      .innerText = `${dia} - ${formatada}`;
-  });
-}
-
-
-
-
-// Tentativa de agendamento
-async function tentarAgendar(dia, horario) {
-  const professor = usuarioLogado.nome;
   const turma = document.getElementById("turma").value;
   const laboratorio = document.getElementById("laboratorio").value;
   const data = document.getElementById("data").value;
 
-if (!data) {
-  alert("Selecione uma data");
-  return;
-}
-
-
-  if (!professor || !turma) {
-    alert("Preencha professor e turma");
-    return;
-  }
+  if(!diaSelecionado||!horarioSelecionado)
+    return alert("Selecione horário");
 
   const q = query(
     agendaRef,
-    where("dia", "==", dia),
-    where("horario", "==", horario),
-    where("laboratorio", "==", laboratorio),
-    where("data", "==", data)
+    where("dia","==",diaSelecionado),
+    where("horario","==",horarioSelecionado),
+    where("laboratorio","==",laboratorio),
+    where("data","==",data)
   );
 
   const snap = await getDocs(q);
-
-  if (!snap.empty) {
-  alert("Horário já ocupado!");
-  return;
-  }
-
-
-  await addDoc(agendaRef, {
-    dia,
-    horario,
-    laboratorio,
-    professor,
-    turma,
-    data,
-    uid: usuarioLogado.uid,
-    criadoEm: new Date()
-  });
-}
-document.getElementById("data").onchange = (e) => {
-  carregarAgenda(e.target.value);
-};
-
-document.getElementById("btnAgendar").onclick = () => {
-
-  if (!diaSelecionado || !horarioSelecionado) {
-    alert("Selecione um horário!");
+  if(!snap.empty){
+    alert("Este laboratório já está ocupado!");
     return;
   }
 
-  tentarAgendar(diaSelecionado, horarioSelecionado);
-};
-
-import {
-  deleteDoc,
-  doc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-
-window.cancelarAgendamento = async (id) => {
-
-  if (!confirm("Deseja cancelar este agendamento?")) return;
-
-  await deleteDoc(doc(db, "agendamentos", id));
-};
-
-
-window.editarAgendamento = async (id) => {
-
-  const novaTurma = prompt("Nova turma:");
-
-  if (!novaTurma) return;
-
-  await updateDoc(doc(db, "agendamentos", id), {
-    turma: novaTurma
+  await addDoc(agendaRef,{
+    dia:diaSelecionado,
+    horario:horarioSelecionado,
+    laboratorio,
+    professor:usuarioLogado.nome,
+    turma,
+    data,
+    uid:usuarioLogado.uid,
+    criadoEm:new Date()
   });
-};
+}
+
+document.getElementById("btnAgendar").onclick = tentarAgendar;
+
+/* EDITAR */
+window.editarAgendamento = async id => {
+  const nova = prompt("Nova turma:");
+  if(!nova)return;
+
+  await updateDoc(doc(db,"agendamentos",id),{
+    turma:nova
+  });
+}
+
+/* CANCELAR */
+window.cancelarAgendamento = async id => {
+  if(!confirm("Cancelar agendamento?"))return;
+  await deleteDoc(doc(db,"agendamentos",id));
+}
+
+/* CABEÇALHO */
+function atualizarCabecalhoSemana(data){
+  const base = new Date(data+"T00:00");
+  const dSemana = base.getDay();
+  const diff = dSemana===0?-6:1-dSemana;
+  base.setDate(base.getDate()+diff);
+
+  ["Seg","Ter","Qua","Qui","Sex"].forEach((d,i)=>{
+    const dt = new Date(base);
+    dt.setDate(base.getDate()+i);
+    document.getElementById(`th-${d}`)
+    .innerText = `${d} - ${dt.toLocaleDateString("pt-BR")}`;
+  });
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Agendamento de Laboratórios</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+
+<body>
+
+<div class="container" id="sistema">
+
+  <div class="topo">
+    <h1>Agendamento de Laboratórios</h1>
+    <button id="btnLogout">Sair</button>
+  </div>
+
+  <div class="formulario">
+    <input type="date" id="data">
+
+    <input type="text" id="turma" placeholder="Turma">
+
+    <select id="laboratorio">
+      <option value="Automação">Automação</option>
+      <option value="Informática">Informática</option>
+      <option value="Elétrica">Elétrica</option>
+      <option value="Motores">Motores</option>
+      <option value="Metalmecânica">Metalmecânica</option>
+    </select>
+
+    <button id="btnAgendar">Agendar</button>
+  </div>
+
+  <table id="agenda">
+    <thead>
+      <tr>
+        <th>Horário</th>
+        <th id="th-Seg">Seg</th>
+        <th id="th-Ter">Ter</th>
+        <th id="th-Qua">Qua</th>
+        <th id="th-Qui">Qui</th>
+        <th id="th-Sex">Sex</th>
+      </tr>
+    </thead>
+    <tbody id="corpo-agenda"></tbody>
+  </table>
+
+</div>
+
+<script type="module" src="firebase.js"></script>
+<script type="module" src="logica.js"></script>
+
+</body>
+
+</html>
