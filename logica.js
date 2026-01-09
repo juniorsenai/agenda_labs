@@ -14,6 +14,8 @@ let unsubscribe = null;
 let diaSelecionado = null;
 let horarioSelecionado = null;
 let usuarioLogado = null;
+let laboratorioSelecionado = null;
+let semanaBaseSelecionada = null;
 
 /* 🔐 PROTEÇÃO */
 onAuthStateChanged(auth, user => {
@@ -25,7 +27,6 @@ onAuthStateChanged(auth, user => {
       nome: user.displayName || user.email.split("@")[0],
       email: user.email
     };
-
     document.getElementById("sistema").style.display = "block";
   }
 });
@@ -38,12 +39,18 @@ document.getElementById("btnLogout").onclick = async () => {
 
 /* DATA */
 const inputData = document.getElementById("data");
-const hoje = new Date().toISOString().split("T")[0];
-inputData.min = hoje;
 
 inputData.addEventListener("change", () => {
+  semanaBaseSelecionada = calcularSegunda(inputData.value);
   atualizarCabecalhoSemana(inputData.value);
-  carregarAgendaSemana(inputData.value);
+  carregarAgenda();
+});
+
+/* LAB */
+const selectLab = document.getElementById("laboratorio");
+selectLab.addEventListener("change", () => {
+  laboratorioSelecionado = selectLab.value;
+  carregarAgenda();
 });
 
 /* TABELA */
@@ -74,7 +81,7 @@ horarios.forEach(hora => {
   corpoAgenda.appendChild(tr);
 });
 
-/* UTIL */
+/* FUNÇÕES */
 function limparTabela() {
   dias.forEach(dia => {
     horarios.forEach(hora => {
@@ -85,36 +92,16 @@ function limparTabela() {
   });
 }
 
-/* 📅 SEMANA */
-function obterSemana(data){
+function carregarAgenda() {
 
-  const base = new Date(data+"T00:00");
-  const diaSemana = base.getDay();
-
-  const diff = diaSemana===0 ? -6 : 1-diaSemana;
-  base.setDate(base.getDate()+diff);
-
-  const segunda = new Date(base);
-  const sexta = new Date(base);
-  sexta.setDate(base.getDate()+4);
-
-  return {
-    inicio: segunda.toISOString().split("T")[0],
-    fim: sexta.toISOString().split("T")[0]
-  };
-}
-
-/* CARREGAR SEMANA */
-function carregarAgendaSemana(data){
+  if(!semanaBaseSelecionada || !laboratorioSelecionado) return;
 
   if (unsubscribe) unsubscribe();
 
-  const {inicio, fim} = obterSemana(data);
-
   const q = query(
     agendaRef,
-    where("data", ">=", inicio),
-    where("data", "<=", fim)
+    where("semanaBase","==",semanaBaseSelecionada),
+    where("laboratorio","==",laboratorioSelecionado)
   );
 
   unsubscribe = onSnapshot(q, snap => {
@@ -122,7 +109,6 @@ function carregarAgendaSemana(data){
     limparTabela();
 
     snap.forEach(docu => {
-
       const d = docu.data();
       const c = document.getElementById(`${d.dia}-${d.horario}`);
 
@@ -160,30 +146,18 @@ async function tentarAgendar(){
   if(!diaSelecionado||!horarioSelecionado)
     return alert("Selecione horário");
 
-  const dataReal = calcularDataReal(diaSelecionado);
-
   await addDoc(agendaRef,{
     dia:diaSelecionado,
     horario:horarioSelecionado,
     laboratorio,
     professor:usuarioLogado.nome,
     turma,
-    data:dataReal,
+    semanaBase:semanaBaseSelecionada,
     uid:usuarioLogado.uid,
     criadoEm:new Date()
   });
-}
 
-/* DATA REAL */
-function calcularDataReal(dia){
-
-  const base = new Date(inputData.value+"T00:00");
-  const mapa = {Seg:1,Ter:2,Qua:3,Qui:4,Sex:5};
-
-  const diff = mapa[dia]-base.getDay();
-  base.setDate(base.getDate()+diff);
-
-  return base.toISOString().split("T")[0];
+  carregarAgenda();
 }
 
 document.getElementById("btnAgendar").onclick = tentarAgendar;
@@ -206,7 +180,6 @@ window.cancelarAgendamento = async id => {
 
 /* CABEÇALHO */
 function atualizarCabecalhoSemana(data){
-
   const base = new Date(data+"T00:00");
   const dSemana = base.getDay();
   const diff = dSemana===0?-6:1-dSemana;
@@ -218,4 +191,13 @@ function atualizarCabecalhoSemana(data){
     document.getElementById(`th-${d}`)
     .innerText = `${d} - ${dt.toLocaleDateString("pt-BR")}`;
   });
+}
+
+/* SEGUNDA-FEIRA */
+function calcularSegunda(data){
+  const d = new Date(data+"T00:00");
+  const dia = d.getDay();
+  const diff = dia===0 ? -6 : 1 - dia;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().split("T")[0];
 }
