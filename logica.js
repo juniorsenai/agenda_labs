@@ -6,6 +6,7 @@ import {
   query,
   where,
   onSnapshot,
+  getDocs,
   deleteDoc,
   doc,
   updateDoc
@@ -238,3 +239,75 @@ function atualizarCabecalhoSemana(data) {
       `${d} - ${dt.toLocaleDateString("pt-BR")}`;
   });
 }
+
+
+/*==========================
+          DOWNLOAD
+============================*/
+function baixarCSV(conteudo, nomeArquivo) {
+  const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+
+//RELATORIO
+document.getElementById("btnRelatorio").onclick = gerarRelatorioMensal;
+
+async function gerarRelatorioMensal() {
+
+  const dataSelecionada = document.getElementById("data").value;
+  const laboratorio = document.getElementById("laboratorio").value;
+
+  if (!dataSelecionada)
+    return alert("Selecione uma data para o relatório");
+
+  if (!laboratorio)
+    return alert("Selecione um laboratório");
+
+  // 🔹 Cálculo correto do mês
+  const base = new Date(dataSelecionada + "T00:00");
+  const ano = base.getFullYear();
+  const mes = base.getMonth();
+
+  const inicioMes = new Date(ano, mes, 1);
+  const fimMes = new Date(ano, mes + 1, 0); // último dia real do mês
+
+  const inicioStr = inicioMes.toISOString().split("T")[0];
+  const fimStr = fimMes.toISOString().split("T")[0];
+
+  console.log("Relatório:", inicioStr, fimStr, laboratorio);
+
+  const q = query(
+    agendaRef,
+    where("laboratorio", "==", laboratorio),
+    where("data", ">=", inicioStr),
+    where("data", "<=", fimStr)
+  );
+
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    alert("Nenhum agendamento encontrado neste mês");
+    return;
+  }
+
+  let csv = "Data;Dia;Horário;Laboratório;Professor;Turma\n";
+
+  snap.forEach(docu => {
+    const d = docu.data();
+    csv += `${d.data};${d.dia};${d.horario};${d.laboratorio};${d.professor};${d.turma}\n`;
+  });
+
+  baixarCSV(csv, `relatorio_${laboratorio}_${ano}_${mes+1}.csv`);
+}
+
+
