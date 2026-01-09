@@ -1,7 +1,7 @@
 import { db, auth } from "./firebase.js";
 import {
   collection, addDoc, query, where,
-  onSnapshot, getDocs, deleteDoc,
+  onSnapshot, deleteDoc,
   doc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -43,14 +43,8 @@ inputData.min = hoje;
 
 inputData.addEventListener("change", () => {
   atualizarCabecalhoSemana(inputData.value);
-  carregarAgenda(inputData.value);
+  carregarAgendaSemana(inputData.value);
 });
-
-/* LABORATÓRIO */
-document.getElementById("laboratorio").onchange = () => {
-  const data = document.getElementById("data").value;
-  if (data) carregarAgenda(data);
-};
 
 /* TABELA */
 const horarios = ["08:00","10:00","10:15","12:00","13:00",
@@ -80,7 +74,7 @@ horarios.forEach(hora => {
   corpoAgenda.appendChild(tr);
 });
 
-/* FUNÇÕES */
+/* UTIL */
 function limparTabela() {
   dias.forEach(dia => {
     horarios.forEach(hora => {
@@ -91,17 +85,36 @@ function limparTabela() {
   });
 }
 
-function carregarAgenda(data) {
+/* 📅 SEMANA */
+function obterSemana(data){
+
+  const base = new Date(data+"T00:00");
+  const diaSemana = base.getDay();
+
+  const diff = diaSemana===0 ? -6 : 1-diaSemana;
+  base.setDate(base.getDate()+diff);
+
+  const segunda = new Date(base);
+  const sexta = new Date(base);
+  sexta.setDate(base.getDate()+4);
+
+  return {
+    inicio: segunda.toISOString().split("T")[0],
+    fim: sexta.toISOString().split("T")[0]
+  };
+}
+
+/* CARREGAR SEMANA */
+function carregarAgendaSemana(data){
 
   if (unsubscribe) unsubscribe();
 
-  const laboratorio =
-    document.getElementById("laboratorio").value;
+  const {inicio, fim} = obterSemana(data);
 
   const q = query(
     agendaRef,
-    where("data","==",data),
-    where("laboratorio","==",laboratorio)
+    where("data", ">=", inicio),
+    where("data", "<=", fim)
   );
 
   unsubscribe = onSnapshot(q, snap => {
@@ -109,6 +122,7 @@ function carregarAgenda(data) {
     limparTabela();
 
     snap.forEach(docu => {
+
       const d = docu.data();
       const c = document.getElementById(`${d.dia}-${d.horario}`);
 
@@ -142,24 +156,11 @@ async function tentarAgendar(){
 
   const turma = document.getElementById("turma").value;
   const laboratorio = document.getElementById("laboratorio").value;
-  const data = document.getElementById("data").value;
 
   if(!diaSelecionado||!horarioSelecionado)
     return alert("Selecione horário");
 
-  const q = query(
-    agendaRef,
-    where("dia","==",diaSelecionado),
-    where("horario","==",horarioSelecionado),
-    where("laboratorio","==",laboratorio),
-    where("data","==",data)
-  );
-
-  const snap = await getDocs(q);
-  if(!snap.empty){
-    alert("Este laboratório já está ocupado!");
-    return;
-  }
+  const dataReal = calcularDataReal(diaSelecionado);
 
   await addDoc(agendaRef,{
     dia:diaSelecionado,
@@ -167,10 +168,22 @@ async function tentarAgendar(){
     laboratorio,
     professor:usuarioLogado.nome,
     turma,
-    data,
+    data:dataReal,
     uid:usuarioLogado.uid,
     criadoEm:new Date()
   });
+}
+
+/* DATA REAL */
+function calcularDataReal(dia){
+
+  const base = new Date(inputData.value+"T00:00");
+  const mapa = {Seg:1,Ter:2,Qua:3,Qui:4,Sex:5};
+
+  const diff = mapa[dia]-base.getDay();
+  base.setDate(base.getDate()+diff);
+
+  return base.toISOString().split("T")[0];
 }
 
 document.getElementById("btnAgendar").onclick = tentarAgendar;
@@ -193,6 +206,7 @@ window.cancelarAgendamento = async id => {
 
 /* CABEÇALHO */
 function atualizarCabecalhoSemana(data){
+
   const base = new Date(data+"T00:00");
   const dSemana = base.getDay();
   const diff = dSemana===0?-6:1-dSemana;
